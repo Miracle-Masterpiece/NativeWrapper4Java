@@ -1,0 +1,3 @@
+for linux : 					 gcc -I"include" -shared -fPIC -O2 -o MemoryAccessor.so main.c
+for windows : x86_64-w64-mingw32-gcc -I"include" -shared -fPIC -O2 -o MemoryAccessor.dll main.c
+
