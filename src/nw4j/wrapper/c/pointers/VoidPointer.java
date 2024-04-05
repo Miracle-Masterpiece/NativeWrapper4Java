@@ -136,7 +136,7 @@ public abstract class VoidPointer implements Closeable, AutoCloseable, Cloneable
 	}
 
 	@Override public int hashCode() {
-		return (int)address >> 32;
+		return (int)(address >> 32);
 	}
 
 	@Override public boolean equals(Object o) {
@@ -206,7 +206,7 @@ public abstract class VoidPointer implements Closeable, AutoCloseable, Cloneable
 	 *	}
 	 * */
 	public final void copydata(final VoidPointer src) {
-		MemoryAccessor.memcopy(src.address, address, sizeof());
+		MemoryAccessor.memcopy(src.address, address, src.sizeof());
 	}
 
 	protected void setByte(long index, byte v) {

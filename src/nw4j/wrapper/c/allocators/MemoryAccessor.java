@@ -22,9 +22,15 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static nw4j.helpers.Helpers.getCriticalMethodHandle;
 
+import java.lang.annotation.Native;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import nw4j.helpers.Helpers;
 /**
@@ -37,7 +43,33 @@ import nw4j.helpers.Helpers;
  * @since 0.1
  * @author miracle-masterpiece
  * */
+import nw4j.helpers.NativeType;
+import nw4j.wrapper.c.pointers.BytePointer;
+import nw4j.wrapper.c.pointers.FloatPointer;
+import nw4j.wrapper.c.pointers.IntPointer;
+import nw4j.wrapper.c.pointers.VoidPointer;
 public final class MemoryAccessor{
+
+	private static final boolean ENABLE_NATIVE_TRACKING;
+	private static final HashMap<Long, AllocateData> activeAllocates;
+
+	static {
+		
+		String prop = System.getProperty("enableNativeTracking");
+		
+		if (prop != null) {
+			if (prop.equals("true")) {
+				ENABLE_NATIVE_TRACKING = true;
+				activeAllocates = new HashMap<>();
+			}else {
+				ENABLE_NATIVE_TRACKING = false;
+				activeAllocates = null;
+			}
+		}else {
+			ENABLE_NATIVE_TRACKING = false;
+			activeAllocates = null;
+		}
+	}
 
 	private MemoryAccessor() {}
 
@@ -118,7 +150,7 @@ public final class MemoryAccessor{
 	NATIVE_SIZEOF_LONG,
 	NATIVE_SIZEOF_DOUBLE,
 	NATIVE_SIZEOF_POINTER;
-	
+
 	static {
 
 		Helpers.loadlib("MemoryAccessor");
@@ -147,7 +179,7 @@ public final class MemoryAccessor{
 		getLong				= getCriticalMethodHandle(new String(new char[]{'g','e','t','L','o','n','g'}), 	FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
 		getDouble			= getCriticalMethodHandle(new String(new char[]{'g','e','t','D','o','u','b','l','e'}), 	FunctionDescriptor.of(JAVA_DOUBLE, JAVA_LONG));
 		getBoolean			= getCriticalMethodHandle(new String(new char[]{'g','e','t','B','o','o','l','e','a','n'}), FunctionDescriptor.of(JAVA_BOOLEAN, JAVA_LONG));
-		
+
 		try {			
 			NATIVE_SIZEOF_CHAR 		= (byte)getCriticalMethodHandle("sizeofChar", 		FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
 			NATIVE_SIZEOF_SHORT 	= (byte)getCriticalMethodHandle("sizeofShort", 		FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
@@ -162,6 +194,37 @@ public final class MemoryAccessor{
 		}
 	}
 
+
+	private static final class AllocateData{
+		final StackTraceElement[] stackTrace;
+		final long allocSize;
+
+		public AllocateData(StackTraceElement[] stackTrace, long allocSize) {
+			this.stackTrace = stackTrace;
+			this.allocSize = allocSize;
+		}
+
+		public StackTraceElement[] getStackTraceArray() {
+			return stackTrace;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			return o == this;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(" size = ").append(allocSize).append("\n");
+			for (int i = 0; i < stackTrace.length; ++i) {
+				StackTraceElement e = stackTrace[i];
+				sb.append(e).append("\n");
+			}
+			return sb.toString();
+		}
+	}
+
 	/**
 	 * Allocates memory outside the java heap of size n.
 	 * @param n 	Number of bytes of requested memory.
@@ -169,8 +232,41 @@ public final class MemoryAccessor{
 	 * */
 	public static long malloc(long n) {
 		try {
-			return (long)allocateMemory.invoke(n);
+			
+			
+			if (ENABLE_NATIVE_TRACKING) {
+				synchronized (MemoryAccessor.class) {
+					StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+					@NativeType(" void* ") final long pointer = (long)allocateMemory.invoke(n); 
+					if (pointer != VoidPointer.nullptr)  
+						activeAllocates.put(pointer, new AllocateData(stack, n));
+					return pointer;
+				}
+			}else {			
+				return (long)allocateMemory.invoke(n);
+			}
+		
+		
+		
 		} catch (Throwable e) {throw new RuntimeException(e);}
+	}
+
+	public static void main(String[] args) {
+		
+		Thread t = new Thread( () -> {
+			FloatPointer PI = FloatPointer.alloc(1, pointer -> {pointer.set(3.141f);});
+		});	
+		
+		t.start();
+		
+		try {
+			t.join();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		System.out.println(getLog());
 	}
 
 	/**
@@ -178,9 +274,19 @@ public final class MemoryAccessor{
 	 * @param addres The address to be released.
 	 * */
 	public static void free(long address) {
-		try {
-			freeMemory.invoke(address);
-		} catch (Throwable e) {throw new RuntimeException(e);}
+		if (ENABLE_NATIVE_TRACKING) {
+			synchronized (MemoryAccessor.class) {
+				try {
+					activeAllocates.remove(address);
+					freeMemory.invoke(address);
+				} catch (Throwable e) {throw new RuntimeException(e);}			
+			}
+		}else {
+			try {
+				freeMemory.invoke(address);
+			} catch (Throwable e) {throw new RuntimeException(e);}			
+		}
+
 	}
 
 	/**
@@ -196,7 +302,17 @@ public final class MemoryAccessor{
 	 * */
 	public static long realloc(long address, long newsize) {
 		try {
-			return (long)reallocateMemory.invoke(address, newsize);
+			
+			if (ENABLE_NATIVE_TRACKING) {
+				long newAddress = (long) reallocateMemory.invoke(address, newsize);
+				if (newAddress != VoidPointer.nullptr) {
+					activeAllocates.remove(address);
+					activeAllocates.put(newAddress, new AllocateData(Thread.currentThread().getStackTrace(), newsize));
+				}
+				return newAddress;
+			}else {				
+				return (long)reallocateMemory.invoke(address, newsize);
+			}
 		} catch (Throwable e) {throw new RuntimeException(e);}
 	}
 
@@ -219,7 +335,13 @@ public final class MemoryAccessor{
 	 * */
 	public static long calloc(long count, int typeSize) {
 		try {
-			return (long)callocateMemory.invoke(count, typeSize);
+			if (ENABLE_NATIVE_TRACKING) {
+				@NativeType(" void* ") long pointer = (long)callocateMemory.invoke(count, typeSize);
+				if (pointer != VoidPointer.nullptr) activeAllocates.put(pointer, new AllocateData(Thread.currentThread().getStackTrace(), typeSize * count));
+				return pointer;
+			}else {				
+				return (long)callocateMemory.invoke(count, typeSize);
+			}
 		} catch (Throwable e) {throw new RuntimeException(e);}
 	}
 
@@ -410,4 +532,15 @@ public final class MemoryAccessor{
 			return (boolean)getBoolean.invoke(address);
 		} catch (Throwable e) {throw new RuntimeException(e);}
 	}
+	
+	public static String getLog() {
+		if (!ENABLE_NATIVE_TRACKING) return "Native tracking is disable";
+		StringBuilder sb = new StringBuilder();
+		Set<Map.Entry<Long, AllocateData>> set = activeAllocates.entrySet();
+		for (Entry<Long, AllocateData> entry : set) {
+			sb.append(entry.getKey()).append(" = ").append(entry.getValue()); 
+		}
+		return sb.toString();
+	}
+	
 }

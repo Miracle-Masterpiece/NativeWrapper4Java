@@ -68,9 +68,9 @@ public final class BytePointer extends VoidPointer{
 			}
 		}
 
-		final char[] data = new char[len];
+		final byte[] data = new byte[len];
 		for (int i = 0; i < len ;++i) {
-			data[i] = (char) getByte(i);
+			data[i] = getByte(i);
 		}
 		return new String(data);
 	}
