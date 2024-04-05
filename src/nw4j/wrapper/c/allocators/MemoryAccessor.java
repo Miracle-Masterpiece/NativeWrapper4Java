@@ -278,7 +278,7 @@ public final class MemoryAccessor{
 			
 			if (ENABLE_NATIVE_TRACKING) {
 				long newAddress = (long) reallocateMemory.invoke(address, newsize);
-				if (newAddress != VoidPointer.nullptr) {
+				if (newAddress != VoidPointer.nullptr && newAddress != address) {
 					activeAllocates.remove(address);
 					activeAllocates.put(newAddress, new AllocateData(Thread.currentThread().getStackTrace(), newsize));
 				}
