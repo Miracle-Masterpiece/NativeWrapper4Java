@@ -22,12 +22,10 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static nw4j.helpers.Helpers.getCriticalMethodHandle;
 
-import java.lang.annotation.Native;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -44,9 +42,6 @@ import nw4j.helpers.Helpers;
  * @author miracle-masterpiece
  * */
 import nw4j.helpers.NativeType;
-import nw4j.wrapper.c.pointers.BytePointer;
-import nw4j.wrapper.c.pointers.FloatPointer;
-import nw4j.wrapper.c.pointers.IntPointer;
 import nw4j.wrapper.c.pointers.VoidPointer;
 public final class MemoryAccessor{
 
@@ -204,10 +199,6 @@ public final class MemoryAccessor{
 			this.allocSize = allocSize;
 		}
 
-		public StackTraceElement[] getStackTraceArray() {
-			return stackTrace;
-		}
-
 		@Override
 		public boolean equals(Object o) {
 			return o == this;
@@ -250,25 +241,7 @@ public final class MemoryAccessor{
 		
 		} catch (Throwable e) {throw new RuntimeException(e);}
 	}
-
-	public static void main(String[] args) {
-		
-		Thread t = new Thread( () -> {
-			FloatPointer PI = FloatPointer.alloc(1, pointer -> {pointer.set(3.141f);});
-		});	
-		
-		t.start();
-		
-		try {
-			t.join();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		System.out.println(getLog());
-	}
-
+	
 	/**
 	 * Frees memory allocated outside the java heap.
 	 * @param addres The address to be released.
