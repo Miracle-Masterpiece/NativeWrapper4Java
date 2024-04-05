@@ -52,6 +52,14 @@ void 	setMemory(			const jlong address, 	const jint value, 		const jlong size);
 jlong 	callocateMemory(	const jlong count, 		const jint typeSize);
 void 	copyMemory(			const jlong srcAddress, const jlong dstAddress, const jlong len);
 
+uint8_t sizeofChar();
+uint8_t sizeofShort();
+uint8_t sizeofInt();
+uint8_t sizeofFloat();
+uint8_t sizeofLong();
+uint8_t sizeofDouble();
+uint8_t sizeofPointer();
+
 #ifdef __cplusplus
 }
 #endif

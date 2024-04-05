@@ -59,11 +59,13 @@
         		_mm_store_ps(&C[4*i], row);
     	}
 		#else
+			float tmp[16];			
 			for (int i = 0; i < 16; i+=4) {
 				for (int j = 0; j < 4; j++) {
-					C[i + j] = (A[i] * B[j]) + (A[i + 1] * B[j + 4]) + (A[i + 2] * B[j + 8])  + (A[i + 3] * B[j + 12]);		
+					tmp[i + j] = (A[i] * B[j]) + (A[i + 1] * B[j + 4]) + (A[i + 2] * B[j + 8])  + (A[i + 3] * B[j + 12]);		
 				}
 			}
+			memcpy(tmp, C, sizeof(jfloat) * 16);
 		#endif
 	}
 
@@ -88,9 +90,6 @@
 		 			result[j] += mat4[j * 4 + i] * vec4[i];
 		 		}				
 		 	}
-
-			printVec(result);
-
 			memcpy(vec4, result, (sizeof(jfloat) * 4));
 		#endif
 	}
@@ -267,7 +266,7 @@
 
 	void negate(jfloat* const mat4){
 		#ifdef USE_INTRINSIC
-			float A[] = {-1, -1, -1, -1};
+			const float A[] = {-1, -1, -1, -1};
 			__m128 oneNegative = _mm_load_ps(A); 
 			for (int i = 0; i < 4; ++i){
 				__m128 row 		= _mm_load_ps(&mat4[i * 4]); 

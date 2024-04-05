@@ -23,6 +23,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static nw4j.helpers.Helpers.getCriticalMethodHandle;
 
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 import nw4j.helpers.Helpers;
@@ -106,6 +107,18 @@ public final class MemoryAccessor{
 	/**@see {@link MemoryAccessor#getBoolean(long)}*/
 	private static final MethodHandle getBoolean;
 
+	/**
+	 * Stores the length in bytes of native primitive types.
+	 * */
+	public static final byte 
+	NATIVE_SIZEOF_CHAR,
+	NATIVE_SIZEOF_SHORT,
+	NATIVE_SIZEOF_INT,
+	NATIVE_SIZEOF_FLOAT,
+	NATIVE_SIZEOF_LONG,
+	NATIVE_SIZEOF_DOUBLE,
+	NATIVE_SIZEOF_POINTER;
+	
 	static {
 
 		Helpers.loadlib("MemoryAccessor");
@@ -134,6 +147,19 @@ public final class MemoryAccessor{
 		getLong				= getCriticalMethodHandle(new String(new char[]{'g','e','t','L','o','n','g'}), 	FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
 		getDouble			= getCriticalMethodHandle(new String(new char[]{'g','e','t','D','o','u','b','l','e'}), 	FunctionDescriptor.of(JAVA_DOUBLE, JAVA_LONG));
 		getBoolean			= getCriticalMethodHandle(new String(new char[]{'g','e','t','B','o','o','l','e','a','n'}), FunctionDescriptor.of(JAVA_BOOLEAN, JAVA_LONG));
+		
+		try {			
+			NATIVE_SIZEOF_CHAR 		= (byte)getCriticalMethodHandle("sizeofChar", 		FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
+			NATIVE_SIZEOF_SHORT 	= (byte)getCriticalMethodHandle("sizeofShort", 		FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
+			NATIVE_SIZEOF_INT 		= (byte)getCriticalMethodHandle("sizeofInt", 		FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
+			NATIVE_SIZEOF_FLOAT 	= (byte)getCriticalMethodHandle("sizeofFloat", 		FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
+			NATIVE_SIZEOF_LONG 		= (byte)getCriticalMethodHandle("sizeofLong", 		FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
+			NATIVE_SIZEOF_DOUBLE 	= (byte)getCriticalMethodHandle("sizeofDouble", 	FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
+			NATIVE_SIZEOF_POINTER 	= (byte)getCriticalMethodHandle("sizeofPointer", 	FunctionDescriptor.of(ValueLayout.JAVA_BYTE)).invoke();
+			System.gc();
+		}catch(Throwable t) {
+			throw new RuntimeException(t);
+		}
 	}
 
 	/**

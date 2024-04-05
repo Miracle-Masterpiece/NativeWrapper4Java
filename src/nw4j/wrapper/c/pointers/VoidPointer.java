@@ -116,8 +116,8 @@ public abstract class VoidPointer implements Closeable, AutoCloseable, Cloneable
 	 * Frees the allocated memory pointed to by the raw address.
 	 * @see {@link VoidPointer#address}
 	 * */
-	public final void free() {
-		MemoryAccessor.free(address);
+	public void free() {
+		close();
 	}
 
 	/**
@@ -125,7 +125,7 @@ public abstract class VoidPointer implements Closeable, AutoCloseable, Cloneable
 	 * @see {@link VoidPointer#address}
 	 * */
 	@Override public void close() {
-		free();
+		MemoryAccessor.free(address);
 	}
 
 	/**
