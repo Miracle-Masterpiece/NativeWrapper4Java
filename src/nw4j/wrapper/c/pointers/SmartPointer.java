@@ -34,7 +34,7 @@ public final class SmartPointer<PTR extends VoidPointer> extends VoidPointer{
 	 * */
 	private final PTR pointer;
 
-	private SmartPointer(PTR pointer) {
+	public SmartPointer(PTR pointer) {
 		this.pointer = Objects.<PTR>requireNonNull(pointer);
 		this.address = pointer.address;
 		cleaner.register(this, new PointerCleaner<>(pointer));
