@@ -59,6 +59,8 @@ uint8_t sizeofFloat();
 uint8_t sizeofLong();
 uint8_t sizeofDouble();
 uint8_t sizeofPointer();
+uint8_t sizeofLongDouble();
+uint8_t sizeofLongLong();
 
 #ifdef __cplusplus
 }

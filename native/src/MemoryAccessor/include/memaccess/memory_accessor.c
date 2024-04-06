@@ -103,11 +103,13 @@
 		memcpy((jlong*)dstAddress, (jlong*)srcAddress, len);
 	}
 
-	uint8_t sizeofChar()		{	return sizeof(char);	}
-	uint8_t sizeofShort()		{	return sizeof(short);	}
-	uint8_t sizeofInt()			{	return sizeof(int);		}
-	uint8_t sizeofFloat()		{	return sizeof(float);	}
-	uint8_t sizeofLong()		{	return sizeof(long);	}
-	uint8_t sizeofDouble()		{	return sizeof(double);	}
-	uint8_t sizeofPointer()		{	return sizeof(void*);	}
+	uint8_t sizeofChar()		{		return sizeof(char);		}
+	uint8_t sizeofShort()		{		return sizeof(short);		}
+	uint8_t sizeofInt()			{		return sizeof(int);			}
+	uint8_t sizeofFloat()		{		return sizeof(float);		}
+	uint8_t sizeofLong()		{		return sizeof(long);		}
+	uint8_t sizeofDouble()		{		return sizeof(double);		}
+	uint8_t sizeofPointer()		{		return sizeof(void*);		}
+	uint8_t sizeofLongDouble()	{		return sizeof(long double);	}
+	uint8_t sizeofLongLong()	{		return sizeof(long long);	}
 
