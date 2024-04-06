@@ -21,7 +21,6 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static nw4j.helpers.Helpers.getCriticalMethodHandle;
-
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
@@ -29,8 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import nw4j.helpers.Helpers;
+
 /**
  * A class that provides access to memory outside the java heap.
  * Methods {@link MemoryAccessor#malloc(long)}, {@link MemoryAccessor#calloc(long, int)}, {@link MemoryAccessor#realloc(long, long)}
@@ -43,11 +42,52 @@ import nw4j.helpers.Helpers;
  * */
 import nw4j.helpers.NativeType;
 import nw4j.wrapper.c.pointers.VoidPointer;
+
 public final class MemoryAccessor{
 
+	/**
+	 * If the value is set to true, then each allocation and reallocation of memory will be recorded in the log. 
+	 * The address of the allocated memory and the full stack of method calls are stored in the log. Also, all allocations, reallocations and deallocations become synchronized. 
+	 * To get a log of unused memory addresses with their stack trace, call the get method.
+	 * 
+	 *
+	 * @see MemoryAccessor#getLog()
+	 * @see MemoryAccessor#activeAllocates
+	 * 
+	 * @since 0.4	 
+	 * * */
 	private static final boolean ENABLE_NATIVE_TRACKING;
-	private static final HashMap<Long, AllocateData> activeAllocates;
+	
+	/**
+	 * A hash card that stores the key, which is the address to the allocated memory, 
+	 * as well as an object that stores the size of the allocated memory in bytes 
+	 * and the stack of methods by which the memory was allocated
+	 * 
+	 * @see MemoryAccessor#getLog()
+	 * @since 0.4	
+	 * */
+	private static final HashMap<Long, AllocateInfoStorage> activeAllocates;
 
+	private static final class AllocateInfoStorage{
+		final StackTraceElement[] stackTrace;
+		final long allocSize;
+
+		public AllocateInfoStorage(StackTraceElement[] stackTrace, long allocSize) {
+			this.stackTrace = stackTrace;
+			this.allocSize = allocSize;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < stackTrace.length; ++i) {
+				StackTraceElement e = stackTrace[i];
+				sb.append(e).append("\n");
+			}
+			return sb.toString();
+		}
+	}
+	
 	static {
 		
 		String prop = System.getProperty("enableNativeTracking");
@@ -189,33 +229,6 @@ public final class MemoryAccessor{
 		}
 	}
 
-
-	private static final class AllocateData{
-		final StackTraceElement[] stackTrace;
-		final long allocSize;
-
-		public AllocateData(StackTraceElement[] stackTrace, long allocSize) {
-			this.stackTrace = stackTrace;
-			this.allocSize = allocSize;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			return o == this;
-		}
-
-		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder();
-			sb.append(" size = ").append(allocSize).append("\n");
-			for (int i = 0; i < stackTrace.length; ++i) {
-				StackTraceElement e = stackTrace[i];
-				sb.append(e).append("\n");
-			}
-			return sb.toString();
-		}
-	}
-
 	/**
 	 * Allocates memory outside the java heap of size n.
 	 * @param n 	Number of bytes of requested memory.
@@ -230,7 +243,7 @@ public final class MemoryAccessor{
 					StackTraceElement[] stack = Thread.currentThread().getStackTrace();
 					@NativeType(" void* ") final long pointer = (long)allocateMemory.invoke(n); 
 					if (pointer != VoidPointer.nullptr)  
-						activeAllocates.put(pointer, new AllocateData(stack, n));
+						activeAllocates.put(pointer, new AllocateInfoStorage(stack, n));
 					return pointer;
 				}
 			}else {			
@@ -280,7 +293,7 @@ public final class MemoryAccessor{
 				long newAddress = (long) reallocateMemory.invoke(address, newsize);
 				if (newAddress != VoidPointer.nullptr && newAddress != address) {
 					activeAllocates.remove(address);
-					activeAllocates.put(newAddress, new AllocateData(Thread.currentThread().getStackTrace(), newsize));
+					activeAllocates.put(newAddress, new AllocateInfoStorage(Thread.currentThread().getStackTrace(), newsize));
 				}
 				return newAddress;
 			}else {				
@@ -310,7 +323,7 @@ public final class MemoryAccessor{
 		try {
 			if (ENABLE_NATIVE_TRACKING) {
 				@NativeType(" void* ") long pointer = (long)callocateMemory.invoke(count, typeSize);
-				if (pointer != VoidPointer.nullptr) activeAllocates.put(pointer, new AllocateData(Thread.currentThread().getStackTrace(), typeSize * count));
+				if (pointer != VoidPointer.nullptr) activeAllocates.put(pointer, new AllocateInfoStorage(Thread.currentThread().getStackTrace(), typeSize * count));
 				return pointer;
 			}else {				
 				return (long)callocateMemory.invoke(count, typeSize);
@@ -506,14 +519,20 @@ public final class MemoryAccessor{
 		} catch (Throwable e) {throw new RuntimeException(e);}
 	}
 	
+	/**
+	 * @return Returns the log of the current allocated memory for which the free method was not called.
+	 * */
 	public static String getLog() {
 		if (!ENABLE_NATIVE_TRACKING) return "Native tracking is disable";
 		StringBuilder sb = new StringBuilder();
-		Set<Map.Entry<Long, AllocateData>> set = activeAllocates.entrySet();
-		for (Entry<Long, AllocateData> entry : set) {
-			sb.append(entry.getKey()).append(" = ").append(entry.getValue()); 
+		Set<Map.Entry<Long, AllocateInfoStorage>> set = activeAllocates.entrySet();
+		for (Entry<Long, AllocateInfoStorage> entry : set) {
+			sb.append("\n======================================= Address: 0x").append(Integer.toHexString(entry.getKey().intValue())).append(" | Size: ").append(entry.getValue().allocSize).append(" =======================================\n").append(entry.getValue()); 
 		}
 		return sb.toString();
 	}
 	
+	public static boolean isEnableNativeTracking() {
+		return ENABLE_NATIVE_TRACKING;
+	}
 }

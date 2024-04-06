@@ -91,7 +91,12 @@ public final class ThreadLocalStack implements IStack{
 
 	@Override
 	public void destroy() {
-		MemoryAccessor.free(address);
+		try {
+			MemoryAccessor.free(address);			
+		}catch(Throwable t) {throw new RuntimeException(t);}
+		try {
+			MemoryAccessor.free(allocSizesArray);			
+		}catch(Throwable t) {throw new RuntimeException(t);}
 	}
 
 	@Override
