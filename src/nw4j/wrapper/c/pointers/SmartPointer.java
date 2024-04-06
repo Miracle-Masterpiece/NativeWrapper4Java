@@ -16,7 +16,6 @@ import java.lang.ref.Cleaner;
 import java.util.Objects;
 
 import javax.naming.OperationNotSupportedException;
-
 /**
  * The current class is a "smart pointer" that stores a reference to a pointer of type {@link VoidPointer}.
  * And which automatically frees it during "garbage collection"
@@ -35,6 +34,7 @@ public final class SmartPointer<PTR extends VoidPointer> extends VoidPointer{
 	private final PTR pointer;
 
 	public SmartPointer(PTR pointer) {
+		super(NULL);
 		this.pointer = Objects.<PTR>requireNonNull(pointer);
 		this.address = pointer.address;
 		cleaner.register(this, new PointerCleaner<>(pointer));
@@ -51,7 +51,7 @@ public final class SmartPointer<PTR extends VoidPointer> extends VoidPointer{
 	private static final class PointerCleaner<P extends VoidPointer> implements Runnable {
 
 		private final P ptr;
-
+		
 		public PointerCleaner(P ptr) {
 			this.ptr = ptr;
 		}
