@@ -80,7 +80,9 @@ public final class StackMatrix2 implements AutoCloseable, Closeable {
 			final int ptr = modelViewStackPointer;
 			System.arraycopy(data, (ptr * MATRIX_SIZE), data, (++modelViewStackPointer) * MATRIX_SIZE, MATRIX_SIZE);
 		}else if (mode == PROJECTION) {
-
+			final float[] data = projectionStack;
+			final int ptr = projectionStackPointer;
+			System.arraycopy(data, (ptr * MATRIX_SIZE), data, (++projectionStackPointer) * MATRIX_SIZE, MATRIX_SIZE);
 		}
 	}
 
