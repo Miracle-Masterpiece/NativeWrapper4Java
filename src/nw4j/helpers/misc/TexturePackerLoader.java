@@ -116,6 +116,14 @@ public class TexturePackerLoader implements Closeable, AutoCloseable {
 		pack();
 	}
 	
+	public int getWidth() {
+		return w;
+	}
+	
+	public int getHegiht() {
+		return h;
+	}
+	
 	private void pack() {
 		for (TexturePacker.Node n : packer) {
 			if (n.getID() == 0) continue;
