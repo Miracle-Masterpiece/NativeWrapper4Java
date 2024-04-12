@@ -141,6 +141,14 @@ public class StackMatrix implements AutoCloseable, Closeable {
 		Mat4Funcs.transpose(mat);
 	}
 	
+	public void getMatrix(float[] array) {
+		final int MATRIX_SIZE = 16;
+		@NativeType("float*") final long matrix = getProjectionModelView();
+		for (int i = 0; i < MATRIX_SIZE; ++i) {
+			array[i] = MemoryAccessor.getFloat(matrix + (i << 2));
+		}
+	}
+	
 	public void loadIdentity() {
 		Mat4Funcs.loadIdentity(getAddressForCurrentMode());
 	}
