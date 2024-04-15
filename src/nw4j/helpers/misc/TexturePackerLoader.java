@@ -120,7 +120,7 @@ public class TexturePackerLoader implements Closeable, AutoCloseable {
 		return w;
 	}
 	
-	public int getHegiht() {
+	public int getHeight() {
 		return h;
 	}
 	

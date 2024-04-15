@@ -22,7 +22,7 @@ import nw4j.wrapper.c.allocators.MemoryAccessor;
  * @since 0.1
  * @author miracle-masterpiece
  * */
-public final class BytePointer extends VoidPointer{
+public final @NativeType("char*") class BytePointer extends VoidPointer{
 
 	private BytePointer(long address) {
 		super(address);

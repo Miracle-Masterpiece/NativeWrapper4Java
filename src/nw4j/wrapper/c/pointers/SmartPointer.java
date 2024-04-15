@@ -14,8 +14,10 @@ package nw4j.wrapper.c.pointers;
 
 import java.lang.ref.Cleaner;
 import java.util.Objects;
-
 import javax.naming.OperationNotSupportedException;
+
+import nw4j.wrapper.c.allocators.MemoryAccessor;
+
 /**
  * The current class is a "smart pointer" that stores a reference to a pointer of type {@link VoidPointer}.
  * And which automatically frees it during "garbage collection"
@@ -37,7 +39,7 @@ public final class SmartPointer<PTR extends VoidPointer> extends VoidPointer{
 		super(NULL);
 		this.pointer = Objects.<PTR>requireNonNull(pointer);
 		this.address = pointer.address;
-		cleaner.register(this, new PointerCleaner<>(pointer));
+		cleaner.register(this, new PointerCleaner<>(pointer.address));
 	}
 
 	/**
@@ -50,16 +52,16 @@ public final class SmartPointer<PTR extends VoidPointer> extends VoidPointer{
 	//Deallocator class
 	private static final class PointerCleaner<P extends VoidPointer> implements Runnable {
 
-		private final P ptr;
+		final long ptr;
 		
-		public PointerCleaner(P ptr) {
+		PointerCleaner(long ptr) {
 			this.ptr = ptr;
 		}
 
 		@Override
 		public void run() {
 			try {
-				ptr.close();
+				MemoryAccessor.free(ptr);
 			}catch(Exception ignore) {}
 		}
 	}

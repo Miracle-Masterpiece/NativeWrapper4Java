@@ -12,6 +12,7 @@
  * */
 package nw4j.wrapper.c.pointers;
 
+import nw4j.helpers.NativeType;
 import nw4j.wrapper.c.allocators.MemoryAccessor;
 
 /**
@@ -20,7 +21,7 @@ import nw4j.wrapper.c.allocators.MemoryAccessor;
  * @since 0.1
  * @author miracle-masterpiece
  * */
-public final class PtrPointer<T extends VoidPointer> extends VoidPointer{
+public final @NativeType("T**")class PtrPointer<T extends VoidPointer> extends VoidPointer{
 
 	private PtrPointer(long address) {
 		super(address);

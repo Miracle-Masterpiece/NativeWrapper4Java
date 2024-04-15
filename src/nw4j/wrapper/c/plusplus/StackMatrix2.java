@@ -11,7 +11,6 @@
  * 
  * */
 package nw4j.wrapper.c.plusplus;
-
 import java.io.Closeable;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;

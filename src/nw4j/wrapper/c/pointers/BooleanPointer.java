@@ -12,6 +12,7 @@
  * */
 package nw4j.wrapper.c.pointers;
 
+import nw4j.helpers.NativeType;
 import nw4j.wrapper.c.allocators.MemoryAccessor;
 
 /**
@@ -20,7 +21,7 @@ import nw4j.wrapper.c.allocators.MemoryAccessor;
  * @since 0.1
  * @author miracle-masterpiece
  * */
-public final class BooleanPointer extends VoidPointer{
+public final @NativeType("bool*") class BooleanPointer extends VoidPointer{
 
 	
 	public static final byte 

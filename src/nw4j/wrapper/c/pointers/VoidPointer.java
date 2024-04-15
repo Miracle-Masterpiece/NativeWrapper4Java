@@ -14,6 +14,7 @@ package nw4j.wrapper.c.pointers;
 
 import java.io.Closeable;
 
+import nw4j.helpers.NativeType;
 import nw4j.wrapper.c.allocators.MemoryAccessor;
 
 /**
@@ -38,7 +39,7 @@ import nw4j.wrapper.c.allocators.MemoryAccessor;
  * @since 0.1
  * @author miracle-masterpiece
  * */
-public abstract class VoidPointer implements Closeable, AutoCloseable, Cloneable{
+public abstract @NativeType("void*") class VoidPointer implements Closeable, AutoCloseable, Cloneable{
 
 	/**sizeof data*/
 	public static final byte
