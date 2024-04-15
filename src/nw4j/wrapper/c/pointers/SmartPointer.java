@@ -26,18 +26,18 @@ import nw4j.wrapper.c.allocators.MemoryAccessor;
  * @since 0.1
  * @author miracle-masterpiece
  * */
-public final class SmartPointer<PTR extends VoidPointer> extends VoidPointer{
+public final class SmartPointer<P extends VoidPointer> extends VoidPointer {
 
 	private static final Cleaner cleaner = Cleaner.create();
 
 	/**
 	 * A pointer that will be automatically free.
 	 * */
-	private final PTR pointer;
+	private final P pointer;
 
-	public SmartPointer(PTR pointer) {
+	public SmartPointer(P pointer) {
 		super(NULL);
-		this.pointer = Objects.<PTR>requireNonNull(pointer);
+		this.pointer = Objects.<P>requireNonNull(pointer);
 		this.address = pointer.address;
 		cleaner.register(this, new PointerCleaner<>(pointer.address));
 	}
@@ -45,7 +45,7 @@ public final class SmartPointer<PTR extends VoidPointer> extends VoidPointer{
 	/**
 	 * @return Returns the original pointer
 	 * */
-	public PTR pointer() {
+	public P get() {
 		return pointer;
 	}
 
